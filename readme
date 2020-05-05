@@ -1,8 +1,14 @@
 Comp 425 - Computer Vision project
 
-Requires creation of virtual environment and import of numpy and openCV2
+Steps to run
 
-project_output package contains all required output images (1a, 1b, 1c, 2, 3, 4)
+1. Create virtual environment in root using command: python3 -m venv venv
+
+2. Install requirements using command: pip3 install -r requirements.txt 
+
+3. Run project from root using command: python3 main.py
+
+
 
 Running order:
 perform corner detection on boxes.png
@@ -13,7 +19,7 @@ create stitched image from Rainier1 and Rainier2
 Perform all previous steps with stitched image and Rainier3 to produce new stitch
 continue for all rainier images to produce full stitch.
 
-Estimated running time is approximately 4 minutes.
+Estimated running time is approximately 4 minutes using included images.
 
 
 function explanations:
