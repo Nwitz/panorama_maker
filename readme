@@ -1,0 +1,144 @@
+Comp 425 - Computer Vision project
+
+Requires creation of virtual environment and import of numpy and openCV2
+
+project_output package contains all required output images (1a, 1b, 1c, 2, 3, 4)
+
+Running order:
+perform corner detection on boxes.png
+perform corner detection on Rainier1 and Rainier2
+perform RANSAC on Rainier1 and Rainier2 to find homography
+create stitched image from Rainier1 and Rainier2
+
+Perform all previous steps with stitched image and Rainier3 to produce new stitch
+continue for all rainier images to produce full stitch.
+
+Estimated running time is approximately 4 minutes.
+
+
+function explanations:
+main.py_______________________________________________
+preprocess:
+    blur image
+
+getGradients:
+    Retrieve the x and y gradients from the image using the Scharr algorithm
+    Retrieve the xy gradient from the image using the multiplication of the x and y gradients
+
+computeCornerStrengthMatrix:
+    find corner strength matrix using x, y and xy gradients.
+    Using the following approximation for strength: det - 0.04 * (trace ** 2)
+    Once corners are found perform thresholding and adaptive thresholding to extract local maxima
+    return the corner strength matrix
+
+get2DGaussian:
+    Given side length, create gaussian kernel and return
+
+displayCornersOnImage:
+    given an image object, draw circles on corners given in the corner strength matrix.
+
+sift:
+    receive a 16 by 16 patch of image orientation matrix centered at corner.
+    normalize patch to correct for rotation invariance
+    bin each 4 by 4 interior patch into 8 bins and append to descriptor
+    return a descriptor of size 128 for the patch
+
+extractPatches:
+    receive image object, for each corner not within 8 pixels of the border, extract a 16 by 16 patch of the
+    contained orientation matrix.
+    return patch
+
+matchImagesFlann:
+    using Fast Library for Approximate Nearest Neighbors (flann) k-nearest neighbor search.
+    Provide two image objects with descriptors and keypoints defined.
+    run flann matching on keypoints and descriptors of both images
+    return internal_matches and image with matches drawn.
+
+prepare_for_matches:
+    create image object and provive Ix, Iy and Ixy (gradient matrices)
+    set the corner matrix of the image object
+    set the orientation matrix of the image object
+    call extract patches and return result.
+
+create_match_objects:
+    internal match object holds corresponding keypoint from image 1 and 2 used in match
+
+process_image:
+    receive two images,
+    convert both into image objects with prepare_for_matches
+    retrieve internal_matches with matchImagesFlann
+    retrieve homography and inverse homography using RANSAC
+    retrieve stitched image by calling stitch.
+
+stitching.py__________________________________________
+project:
+    project x and y coordinate using homography H
+    return x and y in array
+
+computeInlierCount:
+    using the homography and list of matches, compute if projection using homography is within threshold
+    if within threshold add to inlier_matches and increment num_matches add to D_Matches
+
+RANSAC:
+    given matches, number of iterations, inlier threshold
+    selects 4 matches to use to compute homography
+    computes inlier count with computeInlierCount
+    if inlier count is higher than current, replaces count
+    loop for specified number of iterations.
+    recalculate homography using all matches in highest match.
+    return the homography, inverse homography and inlier_matches
+
+stitch:
+    given image1, image2, homography and inverse homography
+    allocate image using allocate_stitch_image
+    place image 1 onto allocated image using add_image1_to_stitched
+    place image 2 onto allocated image using add_image2_to_stitched
+    return stitched image
+
+add_image1_to_stitched:
+    given image 1, allocated image, image 1 offset
+    copy each pixel in image 1 to the offset location in the allocated image specified in offset.
+
+add_image2_to_stitched:
+    Given image 2, allocated image, homography and image 1 offset
+    for each pixel in the allocated image, project into image two, if it is within image two's bounds,
+    get pixel color using get_contribution.
+    If allocated image pixel already has data, take average of image two's contribution and existing data, otherwise
+    take image two's contribution fully.
+    return stitched image
+
+in_range:
+    Given image shape and point, ensures point is within images bounds
+    returns boolean
+
+get_contribution:
+    given image and point
+    use open cv's getRectSubPixel to retrieve the contribution of non integer pixel in image2
+    return 1x1x3 array holding RGB values for pixel color
+
+allocate_stitch_image:
+    Given image1, image2, and inverse homography
+    calls getExtrema to retrieve computed corners of new image
+    returns image 1 offset and newly allocated image
+
+
+get_extrema:
+    Given image1, image2 and inverse homography
+    retrieves top left corner, and bottom right corner of new image,
+    top left is the leftmost and topmost pixel found when comparing inverse projection from image 2 to 1, and image 1
+    base location.
+    top right is the rightmost and bottommost pixel found when comparing inverse projection from image 2 to 1 and image
+    1 base location
+    return topLeft and bottomRight points
+
+convert_to_keypoints:
+    Given list of points
+    create keypoint object with points x and y coordinate, append keypoint to keypoint list
+    return keypoint list.
+
+get_points:
+    Given list of Matches
+    create list of source points and list of destination points from each match.
+    return source points and destination points.
+
+
